@@ -1,0 +1,64 @@
+[build-system]
+requires = ["hatchling>=1.27.0"]
+build-backend = "hatchling.build"
+
+[project]
+name = "eg4-entra-mcp-lab"
+version = "0.1.0"
+description = "Entra-authorized MCP and OBO lab for safely monitoring an EG4 inverter"
+readme = "README.md"
+requires-python = ">=3.12"
+license = { text = "MIT" }
+authors = [{ name = "jLuPSP" }]
+dependencies = [
+  "cryptography>=46.0.0,<47",
+  "httpx>=0.28.1,<0.29",
+  "keyring==25.7.0",
+  "mcp==2.1.1",
+  "msal==1.38.0",
+  "pydantic-settings==2.15.0",
+  "PyJWT[crypto]==2.13.0",
+  "pylxpweb==0.9.40",
+  "uvicorn[standard]==0.52.4",
+]
+
+[project.optional-dependencies]
+dev = [
+  "mypy>=1.19,<2",
+  "pytest>=9.0,<10",
+  "pytest-asyncio>=1.3,<2",
+  "pytest-cov>=7.0,<8",
+  "respx>=0.22,<0.23",
+  "ruff>=0.15,<0.16",
+]
+
+[project.scripts]
+eg4-mcp-gateway = "eg4_entra_mcp.gateway:main"
+eg4-energy-api = "eg4_entra_mcp.energy_api:main"
+eg4-client-login = "eg4_entra_mcp.client_bridge:login_main"
+eg4-client-bridge = "eg4_entra_mcp.client_bridge:bridge_main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/eg4_entra_mcp"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "RUF"]
+ignore = ["E501"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+warn_unused_ignores = false
+packages = ["eg4_entra_mcp"]
+
+[[tool.mypy.overrides]]
+module = ["msal", "msal.*"]
+ignore_missing_imports = true

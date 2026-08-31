@@ -1,0 +1,11 @@
+{
+  "servers": {
+    "eg4-entra": {
+      "type": "http",
+      "url": "https://127.0.0.1:8930/mcp",
+      "oauth": {
+        "clientId": "REPLACE_WITH_VSCODE_PUBLIC_CLIENT_ID"
+      }
+    }
+  }
+}

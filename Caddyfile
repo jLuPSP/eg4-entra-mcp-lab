@@ -1,0 +1,14 @@
+{
+    auto_https disable_redirects
+}
+
+https://:8930 {
+    tls /certs/eg4-gateway.crt /certs/eg4-gateway.key {
+        protocols tls1.2
+    }
+    reverse_proxy gateway:8930 {
+        flush_interval -1
+        header_up X-Real-IP {remote_host}
+        header_up X-Forwarded-Proto https
+    }
+}

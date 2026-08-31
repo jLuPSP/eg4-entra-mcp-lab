@@ -1,0 +1,80 @@
+name: eg4-entra-mcp-lab
+
+services:
+  gateway:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: ["eg4-mcp-gateway"]
+    env_file: [.env]
+    expose: ["8930"]
+    volumes:
+      - ./data/gateway:/app/data
+      - ./logs/gateway:/app/logs
+      - ${GATEWAY_CERTIFICATE_HOST_PATH:-./secrets/mock_gateway.pem}:/run/secrets/gateway.pem:ro
+    networks: [edge, backend]
+    depends_on:
+      energy-api:
+        condition: service_healthy
+    read_only: true
+    tmpfs: [/tmp]
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8930/healthz', timeout=3)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+  caddy:
+    image: caddy:2-alpine
+    depends_on:
+      gateway:
+        condition: service_healthy
+    ports:
+      - "${GATEWAY_BIND_ADDRESS:-127.0.0.1}:8930:8930"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./certs:/certs:ro
+      - ./data/caddy:/data
+      - ./data/caddy-config:/config
+    networks: [edge]
+    read_only: true
+    tmpfs: [/tmp]
+    cap_drop: [ALL]
+    cap_add: [NET_BIND_SERVICE]
+    security_opt: [no-new-privileges:true]
+    pids_limit: 128
+    restart: unless-stopped
+    # Probe the published HTTPS endpoint from outside the Compose network.
+
+  energy-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: ["eg4-energy-api"]
+    env_file: [.env]
+    expose: ["8931"]
+    volumes:
+      - ./data/energy:/app/data
+      - ./logs/energy:/app/logs
+      - ./secrets/eg4_username:/run/secrets/eg4_username:ro
+      - ./secrets/eg4_password:/run/secrets/eg4_password:ro
+    networks: [backend]
+    read_only: true
+    tmpfs: [/tmp]
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8931/healthz', timeout=3)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+networks:
+  edge: {}
+  backend:
+    internal: false
